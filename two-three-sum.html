@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>双指针 Index Cards</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #0f1117;
+    color: #e8e8f0;
+    min-height: 100vh;
+    padding: 40px 24px;
+  }
+
+  h1 {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    color: #5a5a7a;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .deck {
+    max-width: 680px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .card {
+    background: #16181f;
+    border: 1px solid #23253a;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: #3a3d5c; }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .tag-167 { background: #1a2a3a; color: #4a9eff; }
+  .tag-15  { background: #1a2a2a; color: #3ecfb2; }
+  .tag-core { background: #2a1a3a; color: #b47cff; }
+  .tag-bug  { background: #2a1a1a; color: #ff7c7c; }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: #c8c8e0;
+    flex: 1;
+  }
+
+  .arrow {
+    font-size: 12px;
+    color: #3a3d5c;
+    transition: transform 0.2s, color 0.2s;
+  }
+
+  .card.open .arrow { transform: rotate(90deg); color: #5a5a7a; }
+
+  .card-body {
+    display: none;
+    padding: 0 20px 20px;
+    border-top: 1px solid #1e2030;
+  }
+
+  .card.open .card-body { display: block; }
+
+  .section {
+    margin-top: 16px;
+  }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #3a3d6a;
+    margin-bottom: 8px;
+  }
+
+  p {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #9090b0;
+  }
+
+  ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  li {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #9090b0;
+    padding-left: 16px;
+    position: relative;
+  }
+
+  li::before {
+    content: '·';
+    position: absolute;
+    left: 4px;
+    color: #3a3d6a;
+  }
+
+  code, pre {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  .code-block {
+    background: #0a0c12;
+    border: 1px solid #1e2030;
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 8px;
+    overflow-x: auto;
+  }
+
+  .code-block pre {
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #8888aa;
+  }
+
+  .hl-keyword { color: #b47cff; }
+  .hl-func    { color: #4a9eff; }
+  .hl-comment { color: #3a3d5c; }
+  .hl-string  { color: #3ecfb2; }
+  .hl-num     { color: #ff9f6a; }
+
+  .highlight-box {
+    background: #12141c;
+    border-left: 3px solid #b47cff;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    margin-top: 10px;
+  }
+
+  .highlight-box p {
+    font-size: 13px;
+    color: #7878a0;
+  }
+
+  .divider {
+    height: 1px;
+    background: #1e2030;
+    margin: 14px 0;
+  }
+
+  .group-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #2a2d4a;
+    margin: 24px 0 10px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>双指针复习卡片 · Two Pointers</h1>
+
+<div class="deck">
+
+  <!-- CARD 0: Core Idea -->
+  <div class="card" onclick="toggle(this)">
+    <div class="card-header">
+      <span class="tag tag-core">核心思想</span>
+      <span class="card-title">相向双指针是什么？</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="section">
+        <div class="section-label">前提条件</div>
+        <p>数组必须是<strong style="color:#c8c8e0">有序的</strong>，双指针才能work。</p>
+      </div>
+      <div class="section">
+        <div class="section-label">核心原理</div>
+        <ul>
+          <li>左指针 L 从最小值出发，右指针 R 从最大值出发</li>
+          <li>每次移动都是<strong style="color:#c8c8e0">有根据的排除</strong>，不是盲目猜测</li>
+          <li>s > target → R 太大，右指针左移</li>
+          <li>s &lt; target → L 太小，左指针右移</li>
+        </ul>
+      </div>
+      <div class="highlight-box">
+        <p>为什么能排除？因为数组有序，min + max > target，说明 max 右边的数加上任何数都只会更大，max 可以永久排除。</p>
+      </div>
+      <div class="section">
+        <div class="section-label">时间复杂度</div>
+        <p>O(n)，远优于暴力枚举的 O(n²)</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="group-label">LeetCode 167 · Two Sum II</div>
+
+  <!-- CARD 1: 167 思路 -->
+  <div class="card" onclick="toggle(this)">
+    <div class="card-header">
+      <span class="tag tag-167">167</span>
+      <span class="card-title">题目思路</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="section">
+        <div class="section-label">题目</div>
+        <p>已排序数组，找两个数加起来等于 target，返回 1-indexed 的下标。</p>
+      </div>
+      <div class="section">
+        <div class="section-label">解法</div>
+        <ul>
+          <li>left = 0，right = len(numbers) - 1</li>
+          <li>s = numbers[left] + numbers[right]</li>
+          <li>s == target → break，返回 [left+1, right+1]</li>
+          <li>s > target → right -= 1</li>
+          <li>s &lt; target → left += 1</li>
+        </ul>
+      </div>
+      <div class="highlight-box">
+        <p>注意：1-indexed 是返回的下标从1开始，数组本身在Python里还是0-indexed，所以返回时要 +1。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 2: 167 我的错误 -->
+  <div class="card" onclick="toggle(this)">
+    <div class="card-header">
+      <span class="tag tag-bug">踩坑</span>
+      <span class="card-title">167 · 我犯过的错误</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="section">
+        <div class="section-label">错误 1：s 定义在循环外</div>
+        <ul>
+          <li>s 必须在 while 循环内、if 判断之前更新</li>
+          <li>否则每次循环用的是旧的 s，不反映当前 left/right</li>
+        </ul>
+      </div>
+      <div class="divider"></div>
+      <div class="section">
+        <div class="section-label">错误 2：用两个 if 而不是 if/elif</div>
+        <ul>
+          <li>s > target 和 s &lt; target 只会成立一个</li>
+          <li>用 elif 更严谨，避免多余判断</li>
+        </ul>
+      </div>
+      <div class="code-block">
+        <pre><span class="hl-comment"># ❌ 错误写法</span>
+<span class="hl-keyword">while</span> left &lt; right:
+    <span class="hl-keyword">if</span> s == target: <span class="hl-keyword">break</span>
+    <span class="hl-keyword">if</span> s > target: right -= <span class="hl-num">1</span>
+    <span class="hl-keyword">if</span> s &lt; target: left += <span class="hl-num">1</span>
+    s = numbers[left] + numbers[right]  <span class="hl-comment"># s 在最后更新</span>
+
+<span class="hl-comment"># ✅ 正确写法</span>
+<span class="hl-keyword">while</span> left &lt; right:
+    s = numbers[left] + numbers[right]  <span class="hl-comment"># s 在最前更新</span>
+    <span class="hl-keyword">if</span> s == target: <span class="hl-keyword">break</span>
+    <span class="hl-keyword">elif</span> s > target: right -= <span class="hl-num">1</span>
+    <span class="hl-keyword">elif</span> s &lt; target: left += <span class="hl-num">1</span></pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="group-label">LeetCode 15 · 3Sum</div>
+
+  <!-- CARD 3: 3Sum 思路 -->
+  <div class="card" onclick="toggle(this)">
+    <div class="card-header">
+      <span class="tag tag-15">15</span>
+      <span class="card-title">题目思路</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="section">
+        <div class="section-label">核心转化</div>
+        <p>固定一个数 x = nums[i]，把问题转化为：在剩余数组里找两个数加起来等于 <strong style="color:#c8c8e0">-x</strong>。</p>
+      </div>
+      <div class="section">
+        <div class="section-label">为什么 range(n-2)</div>
+        <p>需要三个不同位置 i &lt; j &lt; k，i 最大是 n-3，所以用 range(n-2)。</p>
+      </div>
+      <div class="section">
+        <div class="section-label">为什么 i &lt; j &lt; k</div>
+        <p>数组排序后规定 i &lt; j &lt; k，保证每个 triplet 只被找到一次，避免重复答案。</p>
+      </div>
+      <div class="section">
+        <div class="section-label">剪枝优化</div>
+        <ul>
+          <li>x + nums[i+1] + nums[i+2] > 0 → break（后面的 x 只会更大，不可能找到答案）</li>
+          <li>x + nums[n-2] + nums[n-1] &lt; 0 → continue（当前 x 太小，换下一个）</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 4: 3Sum 去重 -->
+  <div class="card" onclick="toggle(this)">
+    <div class="card-header">
+      <span class="tag tag-15">15</span>
+      <span class="card-title">去重逻辑</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="section">
+        <div class="section-label">三处去重</div>
+        <ul>
+          <li>跳过重复的 x：if i > 0 and x == nums[i-1]: continue</li>
+          <li>找到答案后跳过重复的 j：j+=1，while j&lt;k and nums[j]==nums[j-1]: j+=1</li>
+          <li>找到答案后跳过重复的 k：k-=1，while k>j and nums[k]==nums[k+1]: k-=1</li>
+        </ul>
+      </div>
+      <div class="highlight-box">
+        <p>关键：先移动一步，再用 while 跳过重复。边界条件要写在 while 的左边（Python 短路求值）。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 5: 3Sum 完整代码 -->
+  <div class="card" onclick="toggle(this)">
+    <div class="card-header">
+      <span class="tag tag-15">15</span>
+      <span class="card-title">完整代码</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="code-block">
+        <pre><span class="hl-keyword">def</span> <span class="hl-func">threeSum</span>(nums):
+    nums.sort()
+    ans = []
+    n = len(nums)
+    <span class="hl-keyword">for</span> i <span class="hl-keyword">in</span> range(n-<span class="hl-num">2</span>):
+        x = nums[i]
+        <span class="hl-keyword">if</span> i > <span class="hl-num">0</span> <span class="hl-keyword">and</span> x == nums[i-<span class="hl-num">1</span>]:
+            <span class="hl-keyword">continue</span>                      <span class="hl-comment"># 跳过重复 x</span>
+        <span class="hl-keyword">if</span> x + nums[i+<span class="hl-num">1</span>] + nums[i+<span class="hl-num">2</span>] > <span class="hl-num">0</span>:
+            <span class="hl-keyword">break</span>                         <span class="hl-comment"># 剪枝</span>
+        <span class="hl-keyword">if</span> x + nums[n-<span class="hl-num">2</span>] + nums[n-<span class="hl-num">1</span>] &lt; <span class="hl-num">0</span>:
+            <span class="hl-keyword">continue</span>                      <span class="hl-comment"># 剪枝</span>
+        j, k = i + <span class="hl-num">1</span>, n - <span class="hl-num">1</span>
+        <span class="hl-keyword">while</span> j &lt; k:
+            s = x + nums[j] + nums[k]
+            <span class="hl-keyword">if</span> s == <span class="hl-num">0</span>:
+                ans.append([x, nums[j], nums[k]])
+                j += <span class="hl-num">1</span>
+                <span class="hl-keyword">while</span> j &lt; k <span class="hl-keyword">and</span> nums[j] == nums[j-<span class="hl-num">1</span>]:
+                    j += <span class="hl-num">1</span>                 <span class="hl-comment"># 跳过重复 j</span>
+                k -= <span class="hl-num">1</span>
+                <span class="hl-keyword">while</span> k > j <span class="hl-keyword">and</span> nums[k] == nums[k+<span class="hl-num">1</span>]:
+                    k -= <span class="hl-num">1</span>                 <span class="hl-comment"># 跳过重复 k</span>
+            <span class="hl-keyword">elif</span> s > <span class="hl-num">0</span>:
+                k -= <span class="hl-num">1</span>
+            <span class="hl-keyword">elif</span> s &lt; <span class="hl-num">0</span>:
+                j += <span class="hl-num">1</span>
+    <span class="hl-keyword">return</span> ans</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD 6: Debug -->
+  <div class="card" onclick="toggle(this)">
+    <div class="card-header">
+      <span class="tag tag-bug">踩坑</span>
+      <span class="card-title">如何读懂 IndexError</span>
+      <span class="arrow">▶</span>
+    </div>
+    <div class="card-body">
+      <div class="section">
+        <div class="section-label">错误信息结构</div>
+        <ul>
+          <li>错误类型：IndexError: list index out of range → 用了不存在的 index</li>
+          <li>调用栈：从下往上读，找到你自己代码里的那一行</li>
+          <li>只需关注最后一个 "in threeSum" 那行</li>
+        </ul>
+      </div>
+      <div class="section">
+        <div class="section-label">边界保护原则</div>
+        <ul>
+          <li>内层 while 不受外层 while 保护，必须自己加边界条件</li>
+          <li>边界条件要写在 and 的左边（短路求值，左边False直接跳过右边）</li>
+        </ul>
+      </div>
+      <div class="code-block">
+        <pre><span class="hl-comment"># ❌ 危险：边界在右边，可能先越界再判断</span>
+<span class="hl-keyword">while</span> nums[j] == nums[j-<span class="hl-num">1</span>] <span class="hl-keyword">and</span> j &lt; n:
+
+<span class="hl-comment"># ✅ 安全：边界在左边，先检查再访问</span>
+<span class="hl-keyword">while</span> j &lt; k <span class="hl-keyword">and</span> nums[j] == nums[j-<span class="hl-num">1</span>]:</pre>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function toggle(card) {
+  card.classList.toggle('open');
+}
+</script>
+</body>
+</html>

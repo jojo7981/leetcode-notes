@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>双指针专题 · 翻转复习卡</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Inter:wght@400;500;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222536;
+    --border: #2e3250;
+    --accent: #5b6cf9;
+    --accent2: #38d9a9;
+    --accent3: #f7c948;
+    --accent4: #f06292;
+    --text: #e2e4f0;
+    --muted: #8b8fa8;
+    --code-bg: #12141e;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    padding: 40px 24px 80px;
+  }
+
+  .inner { max-width: 880px; margin: 0 auto; }
+
+  header { text-align: center; margin-bottom: 48px; }
+  header .label { font-size: 11px; letter-spacing: 0.12em; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  header h1 { font-size: 26px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  header p { color: var(--muted); font-size: 14px; }
+
+  .progress-bar { background: var(--surface2); border-radius: 20px; height: 6px; margin: 20px 0 6px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 20px; transition: width 0.4s ease; width: 0%; }
+  .progress-label { font-size: 12px; color: var(--muted); text-align: right; }
+
+  .section-title {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin: 40px 0 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .grid { display: grid; gap: 16px; }
+  .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .grid-1 { grid-template-columns: 1fr; }
+
+  /* ── Flip card shell ── */
+  .flip-card { perspective: 1200px; cursor: pointer; }
+  .flip-inner {
+    position: relative; width: 100%; transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.4,0,0.2,1);
+  }
+  .flip-card.flipped .flip-inner { transform: rotateY(180deg); }
+
+  .flip-front, .flip-back {
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    border-radius: 12px; border: 1px solid var(--border);
+    padding: 22px 24px; position: relative; overflow: hidden;
+  }
+  .flip-front { background: var(--surface); }
+  .flip-back  { background: var(--surface2); transform: rotateY(180deg);
+                position: absolute; top: 0; left: 0; width: 100%; min-height: 100%; }
+
+  /* color bars */
+  .flip-front::before, .flip-back::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0;
+  }
+  .blue  .flip-front::before, .blue  .flip-back::before { background: var(--accent); }
+  .green .flip-front::before, .green .flip-back::before { background: var(--accent2); }
+  .yellow .flip-front::before, .yellow .flip-back::before { background: var(--accent3); }
+  .pink  .flip-front::before, .pink  .flip-back::before { background: var(--accent4); }
+
+  /* front layout */
+  .front-inner { display: flex; flex-direction: column; justify-content: space-between; min-height: 140px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 20px; }
+
+  /* shared card-tag */
+  .card-tag {
+    display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 4px; margin-bottom: 12px;
+  }
+  .blue  .card-tag { background: rgba(91,108,249,0.15); color: var(--accent); }
+  .green .card-tag { background: rgba(56,217,169,0.12); color: var(--accent2); }
+  .yellow .card-tag { background: rgba(247,201,72,0.12); color: var(--accent3); }
+  .pink  .card-tag { background: rgba(240,98,146,0.12); color: var(--accent4); }
+
+  .question { font-size: 15px; font-weight: 600; color: #fff; line-height: 1.5; }
+
+  /* back answer content — mirrors original card styles */
+  .answer-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+
+  .flip-back h3 { font-size: 15px; font-weight: 600; color: #fff; margin-bottom: 12px; }
+  .flip-back p, .flip-back li { color: #c5c8dc; font-size: 14px; line-height: 1.7; }
+  .flip-back ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .flip-back ul li { padding-left: 16px; position: relative; }
+  .flip-back ul li::before { content: '▸'; position: absolute; left: 0; color: var(--accent); font-size: 11px; top: 3px; }
+  .green  .flip-back ul li::before { color: var(--accent2); }
+  .yellow .flip-back ul li::before { color: var(--accent3); }
+  .pink   .flip-back ul li::before { color: var(--accent4); }
+
+  code { font-family: 'JetBrains Mono', monospace; background: var(--code-bg); color: var(--accent2); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+  .code-block {
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; margin-top: 12px;
+    font-size: 13px; line-height: 1.8; overflow-x: auto;
+  }
+  .code-block .kw  { color: #c792ea; }
+  .code-block .fn  { color: #82aaff; }
+  .code-block .cm  { color: #546e7a; font-style: italic; }
+  .code-block .num { color: #f78c6c; }
+  .code-block .op  { color: var(--accent3); }
+
+  .formula {
+    background: var(--code-bg); border-left: 3px solid var(--accent3);
+    border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 12px 0;
+    font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--accent3);
+  }
+
+  .warning-box {
+    background: rgba(240,98,146,0.08); border: 1px solid rgba(240,98,146,0.25);
+    border-radius: 8px; padding: 12px 14px; margin-top: 12px;
+    font-size: 13px; color: #f06292;
+  }
+  .warning-box strong { color: var(--accent4); }
+
+  .tip-box {
+    background: rgba(56,217,169,0.07); border: 1px solid rgba(56,217,169,0.2);
+    border-radius: 8px; padding: 12px 14px; margin-top: 12px;
+    font-size: 13px; color: var(--accent2);
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+  .method-framework { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent);
+    color: #fff; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+  }
+  .green  .step-num { background: var(--accent2); color: #0f1117; }
+  .yellow .step-num { background: var(--accent3); color: #0f1117; }
+  .step-text { font-size: 14px; color: #c5c8dc; line-height: 1.6; }
+  .step-text strong { color: #fff; }
+
+  .complexity-row { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .complexity-pill {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 12px;
+    font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text);
+  }
+  .complexity-pill span { color: var(--accent2); font-weight: 600; }
+
+  .reset-btn {
+    display: block; margin: 40px auto 0;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--muted); font-family: 'Inter', sans-serif; font-size: 13px;
+    padding: 10px 24px; border-radius: 8px; cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .reset-btn:hover { color: var(--text); border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="inner">
+
+<header>
+  <div class="label">LeetCode 双指针专题 · 精讲 02</div>
+  <h1>翻转复习卡</h1>
+  <p>点击卡片查看完整内容 &nbsp;·&nbsp; Container With Most Water &amp; Trapping Rain Water</p>
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  <div class="progress-label" id="progressLabel">0 / 9 已翻开</div>
+</header>
+
+<!-- ═══════════════════════════════════════════
+     1. 核心做题方法论
+═══════════════════════════════════════════ -->
+<div class="section-title">核心做题方法论</div>
+<div class="grid grid-1">
+<div class="flip-card yellow" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">通用框架</div><div class="question">看到双指针题，先问自己哪四个问题？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">通用框架</div>
+      <h3>看到题，先问自己这四个问题</h3>
+      <div class="method-framework">
+        <div class="step"><div class="step-num">1</div><div class="step-text"><strong>What do I want?</strong> — 明确目标是什么（最大面积？总接水量？）</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text"><strong>怎么算？</strong> — 推导出计算公式（面积公式、接水公式）</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text"><strong>什么约束天然存在？</strong> — 双指针相向移动，width 天然只减不增</div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-text"><strong>唯一可控变量是什么？</strong> — 在约束下，我能控制的只有"移动哪一边"，用公式分析哪种选择不会漏掉最优解</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     2. 两题核心思想对比
+═══════════════════════════════════════════ -->
+<div class="section-title">两题核心思想对比</div>
+<div class="grid grid-2">
+
+<div class="flip-card blue" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">11. Container With Most Water</div><div class="question">面积公式是什么？为什么移动短边？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">11. Container With Most Water</div>
+      <h3>为什么移动短边？</h3>
+      <div class="formula">area = min(left, right) × width</div>
+      <ul>
+        <li>保持短边不动、移动长边 → <code>min()</code> 不变或减小，width 减小 → 面积只会更小</li>
+        <li>因此短边这一侧的所有组合可以<strong>安全丢弃</strong></li>
+        <li>移动短边才有机会遇到更高的柱子，找到更大面积</li>
+        <li>两边相等时移动哪边都可以，原因相同</li>
+      </ul>
+      <div class="complexity-row">
+        <div class="complexity-pill">暴力 <span>O(n²)</span></div>
+        <div class="complexity-pill">双指针 <span>O(n)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flip-card green" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">42. Trapping Rain Water</div><div class="question">每个位置 i 能接多少水？公式是什么？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">42. Trapping Rain Water</div>
+      <h3>每个位置能接多少水？</h3>
+      <div class="formula">water[i] = min(left_max, right_max) - height[i]</div>
+      <ul>
+        <li>接水高度取决于<strong>左右两侧最高柱子中较矮的那个</strong></li>
+        <li>高度相等时水会从两侧漏走，所以是严格的 <code>min()</code></li>
+        <li>接不到水时结果 ≤ 0，直接累加不影响答案</li>
+        <li>需要提前知道每个 i 的左最大值和右最大值</li>
+      </ul>
+      <div class="complexity-row">
+        <div class="complexity-pill">预处理法 时间 <span>O(n)</span></div>
+        <div class="complexity-pill">空间 <span>O(n)</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════
+     3. 接雨水三趟遍历
+═══════════════════════════════════════════ -->
+<div class="section-title">接雨水 · 三趟遍历解法</div>
+<div class="grid grid-1">
+<div class="flip-card green" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">算法思路</div><div class="question">为什么需要三趟遍历？每趟做什么？写出完整代码。</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">算法思路</div>
+      <h3>为什么需要三趟遍历？</h3>
+      <ul>
+        <li>计算 <code>water[i]</code> 需要同时知道左最大值和右最大值</li>
+        <li>从左往右遍历时，走到 i 还没见过右边的数据 → 无法当场得到右最大值</li>
+        <li>解决方案：提前用两趟遍历把所有信息存入数组，第三趟直接查表</li>
+      </ul>
+      <div class="divider"></div>
+      <div class="code-block">
+<span class="cm"># 第一趟：从左往右建 pre_max</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="num">1</span>, n):
+    pre_max[i] = <span class="fn">max</span>(pre_max[i<span class="op">-</span><span class="num">1</span>], height[i])
+
+<span class="cm"># 第二趟：从右往左建 suf_max</span>
+<span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(n<span class="op">-</span><span class="num">2</span>, <span class="op">-</span><span class="num">1</span>, <span class="op">-</span><span class="num">1</span>):
+    suf_max[i] = <span class="fn">max</span>(suf_max[i<span class="op">+</span><span class="num">1</span>], height[i])
+
+<span class="cm"># 第三趟：查表累加</span>
+<span class="kw">for</span> pre, suf, h <span class="kw">in</span> <span class="fn">zip</span>(pre_max, suf_max, height):
+    ans <span class="op">+=</span> <span class="fn">min</span>(pre, suf) <span class="op">-</span> h
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     4. Python 语法
+═══════════════════════════════════════════ -->
+<div class="section-title">Python 语法知识点</div>
+<div class="grid grid-2">
+
+<div class="flip-card blue" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">range() 从右往左</div><div class="question"><code>range(start, stop, step)</code> 从右往左遍历怎么写？口诀是什么？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">range() 从右往左</div>
+      <h3><code>range(start, stop, step)</code></h3>
+      <ul>
+        <li>step = <code>-1</code> 代表往左走</li>
+        <li>stop 是<strong>不包含</strong>的，想到达 0 就写 <code>-1</code></li>
+        <li>想到达 1 就写 <code>0</code>，以此类推</li>
+      </ul>
+      <div class="code-block">
+<span class="cm"># 从 n-2 遍历到 0（包含）</span>
+<span class="fn">range</span>(n<span class="op">-</span><span class="num">2</span>, <span class="op">-</span><span class="num">1</span>, <span class="op">-</span><span class="num">1</span>)
+
+<span class="cm"># 从 n-2 遍历到 2（包含）</span>
+<span class="fn">range</span>(n<span class="op">-</span><span class="num">2</span>, <span class="num">1</span>, <span class="op">-</span><span class="num">1</span>)
+      </div>
+      <div class="tip-box">口诀：stop 比你想到达的终点再多往左走一步</div>
+    </div>
+  </div>
+</div>
+
+<div class="flip-card blue" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">负数 index vs range stop</div><div class="question"><code>height[-1]</code> 里的 <code>-1</code> 和 <code>range(n,-1,-1)</code> 里的 <code>-1</code>，含义一样吗？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">负数 index vs range stop</div>
+      <h3>⚠️ 两个 <code>-1</code>，两种含义</h3>
+      <ul>
+        <li><code>height[-1]</code> → 数组<strong>最右边</strong>的元素（index用法）</li>
+        <li><code>range(n, -1, -1)</code> 里的 <code>-1</code> → 遍历边界，代表"到0为止"</li>
+      </ul>
+      <div class="warning-box">
+        <strong>易混淆！</strong> 同样是 -1，在 index 里是最后一个元素，在 range 里只是停止条件的边界值。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flip-card green" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">zip()</div><div class="question"><code>for pre, suf, h in zip(...)</code> 是什么意思？等价于什么写法？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">zip()</div>
+      <h3>多数组同位置同时遍历</h3>
+      <ul>
+        <li>把多个数组按位置打包，每次取出同一位置的元素</li>
+        <li>比手写 <code>for i in range(n)</code> 再取 <code>[i]</code> 更简洁</li>
+      </ul>
+      <div class="code-block">
+<span class="kw">for</span> pre, suf, h <span class="kw">in</span> <span class="fn">zip</span>(pre_max, suf_max, height):
+    <span class="cm"># 等价于：</span>
+    <span class="cm"># pre = pre_max[i]</span>
+    <span class="cm"># suf = suf_max[i]</span>
+    <span class="cm"># h   = height[i]</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flip-card green" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">数组初始化</div><div class="question"><code>[0] * n</code> 和 <code>[] * n</code> 有什么区别？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">数组初始化</div>
+      <h3><code>[0] * n</code> vs <code>[] * n</code></h3>
+      <ul>
+        <li><code>[0] * n</code> → 长度为 n、每格填 0 的数组 ✅</li>
+        <li><code>[] * n</code> → 还是空数组 <code>[]</code>，无法用 index 赋值 ❌</li>
+      </ul>
+      <div class="code-block">
+pre_max = [<span class="num">0</span>] <span class="op">*</span> n        <span class="cm"># ✅ 正确</span>
+pre_max[<span class="num">0</span>] = height[<span class="num">0</span>]   <span class="cm"># 初始化边界</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════
+     5. 我的易错点
+═══════════════════════════════════════════ -->
+<div class="section-title">我的易错点 · 重点记忆</div>
+<div class="grid grid-2">
+
+<div class="flip-card pink" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">Bug 1</div><div class="question">建 <code>pre_max</code> 时 for loop 起点写错了会发生什么？正确做法？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">Bug 1</div>
+      <h3>for loop 起点错误</h3>
+      <p>建 <code>pre_max</code> 时，loop 从 <code>range(0, n)</code> 开始，当 i=0 时访问 <code>pre_max[-1]</code>（Python 的最后一个元素），产生错误结果。</p>
+      <div class="warning-box">
+        <strong>正确做法：</strong> 初始化 <code>pre_max[0] = height[0]</code>，loop 从 <code>range(1, n)</code> 开始。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flip-card pink" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">Bug 2</div><div class="question"><code>suf_max = height[n-1]</code> 和 <code>suf_max[n-1] = height[n-1]</code> 有什么区别？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">Bug 2</div>
+      <h3>把数组赋值成数字</h3>
+      <p>写 <code>suf_max = height[n-1]</code> 会把整个 <code>suf_max</code> 数组覆盖成一个数字，之后无法用 index 访问。</p>
+      <div class="warning-box">
+        <strong>正确做法：</strong> <code>suf_max[n-1] = height[n-1]</code>，只修改最后一格。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flip-card pink" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">Bug 3</div><div class="question">建 <code>suf_max</code> 时，loop 从 <code>range(n, ...)</code> 开始会怎样？正确起点？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">Bug 3</div>
+      <h3>range 的 start 越界</h3>
+      <p>建 <code>suf_max</code> 时，loop 从 <code>range(n, ...)</code> 开始，访问 <code>height[n]</code>，index 越界报错。</p>
+      <div class="warning-box">
+        <strong>正确做法：</strong> 最后一格已初始化，loop 从 <code>range(n-2, -1, -1)</code> 开始。
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="flip-card pink" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">Bug 4</div><div class="question">第三趟 <code>ans +=</code> 写在 for loop 外面会发生什么？</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">Bug 4</div>
+      <h3>for loop 写在外面</h3>
+      <p>第三趟计算接水量时，<code>ans +=</code> 写在 for loop 外面，只计算了最后一个 i 的值，其余全部丢失。</p>
+      <div class="warning-box">
+        <strong>注意缩进：</strong> 累加逻辑必须在 for loop 内部。
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════
+     6. 双指针本质
+═══════════════════════════════════════════ -->
+<div class="section-title">双指针模式 · 一句话本质</div>
+<div class="grid grid-1">
+<div class="flip-card yellow" onclick="flip(this)">
+  <div class="flip-inner">
+    <div class="flip-front">
+      <div class="front-inner">
+        <div><div class="card-tag">核心本质</div><div class="question">双指针为什么能把 O(n²) 降到 O(n)？三步解释。</div></div>
+        <div class="hint">点击查看答案 →</div>
+      </div>
+    </div>
+    <div class="flip-back">
+      <div class="card-tag">核心本质</div>
+      <h3>为什么双指针能把 O(n²) 降到 O(n)？</h3>
+      <div class="method-framework">
+        <div class="step"><div class="step-num">1</div><div class="step-text">每一步用 <strong>O(1) 的代价</strong>，安全排除一批不可能是最优解的组合</div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-text">"安全"的依据：<strong>min() 不变或减小 + width 只减不增</strong> → 被丢弃的组合面积一定更小</div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-text">从两端出发保证覆盖最大宽度，每次移动短边保证不漏掉最优解</div></div>
+      </div>
+      <div class="tip-box">这个分析框架可以迁移到其他双指针题：先找公式，分析哪一侧可以安全丢弃，从两端出发。</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<button class="reset-btn" onclick="resetAll()">↺ 重置所有卡片</button>
+
+</div>
+<script>
+  const total = document.querySelectorAll('.flip-card').length;
+  document.getElementById('progressLabel').textContent = '0 / ' + total + ' 已翻开';
+  let flipped = new Set();
+
+  function flip(card) {
+    card.classList.toggle('flipped');
+    // sync height
+    const inner = card.querySelector('.flip-inner');
+    const front = card.querySelector('.flip-front');
+    const back  = card.querySelector('.flip-back');
+    if (card.classList.contains('flipped')) {
+      inner.style.height = back.scrollHeight + 'px';
+    } else {
+      inner.style.height = front.scrollHeight + 'px';
+    }
+    const idx = [...document.querySelectorAll('.flip-card')].indexOf(card);
+    card.classList.contains('flipped') ? flipped.add(idx) : flipped.delete(idx);
+    updateProgress();
+  }
+
+  function updateProgress() {
+    document.getElementById('progressFill').style.width = (flipped.size / total * 100) + '%';
+    document.getElementById('progressLabel').textContent = flipped.size + ' / ' + total + ' 已翻开';
+  }
+
+  function resetAll() {
+    document.querySelectorAll('.flip-card').forEach(c => {
+      c.classList.remove('flipped');
+      c.querySelector('.flip-inner').style.height = '';
+    });
+    flipped.clear();
+    updateProgress();
+  }
+
+  // init heights
+  document.querySelectorAll('.flip-card').forEach(card => {
+    const front = card.querySelector('.flip-front');
+    card.querySelector('.flip-inner').style.height = front.scrollHeight + 'px';
+  });
+</script>
+</body>
+</html>
